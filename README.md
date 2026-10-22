@@ -1,0 +1,1 @@
+# euromaster-at-partnerverzeichnis
