@@ -16,8 +16,8 @@ console.log('Public directory field boundary, filters, escaping, ID join and mis
 
 for(const network of ['EFR','PLP']){
  const c=D.merge({...base,network},{id:'1',partnerType:network,services:[]});
- assert.equal(D.categoryLabel(c),'Einfache Partner');
- assert(D.profile(c).includes('Einfache Partner'));assert(D.listItem(c).includes('Einfache Partner'));
+ assert.equal(D.categoryLabel(c),'Kooperationspartner (Reifenservice)');
+ assert(D.profile(c).includes('Kooperationspartner (Reifenservice)'));assert(D.listItem(c).includes('Kooperationspartner (Reifenservice)'));
 }
 assert(!html.includes('id="efrToggle"'));assert(!html.includes('id="plpToggle"'));assert(html.includes('id="simplePartnerToggle"'));
 element('simplePartnerToggle').checked=false;

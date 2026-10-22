@@ -15,7 +15,7 @@ function matches(c,services=[],state=''){
  return (!state||c.state===state)&&services.every(s=>c.services.includes(s));
 }
 const isSimplePartner=c=>['EFR','PLP'].includes(String(c.network||c.partnerType||'').toUpperCase());
-const categoryLabel=c=>isSimplePartner(c)?'Einfache Partner':(({FRP:'Franchise',FRPL:'Franchise Light'})[c.partnerType]||c.network);
+const categoryLabel=c=>isSimplePartner(c)?'Kooperationspartner (Reifenservice)':(({FRP:'Franchise',FRPL:'Franchise Light'})[c.partnerType]||c.network);
 function profile(c){
  const address=[c.str,[c.plz,c.ort].filter(Boolean).join(' ')].filter(Boolean).join(', ');
  const row=(label,value)=>value?`<div class="directory-field"><span>${esc(label)}</span><div>${value}</div></div>`:'';
