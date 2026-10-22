@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const D=require('../directory.js');
+const base={kst:'1',firma:'Demo',str:'Demo 1',plz:'1010',ort:'Wien',network:'EFR',mappable:true};
+const p=D.merge(base,{id:'1',services:['Reifen'],management:'SECRET',oem:'SECRET',companyRegister:'SECRET',vatId:'SECRET',contractStart:'SECRET',phone:'+43 123'});
+assert(!D.profile(p).includes('SECRET'));assert(!Object.hasOwn(p,'management'));assert(D.profile(p).includes('tel:+43123'));
+assert(D.matches(p,['Reifen']));assert(!D.matches(p,['Andere']));assert(!D.listItem({...p,firma:'<script>'}).includes('<script>'));
+const html=fs.readFileSync('index.html','utf8'),app=fs.readFileSync('app.js','utf8');
+for(const text of ['regionaldaten','isochronen','turf.min.js','demandToggle','hotspots'])assert(!html.includes(text)&&!app.includes(text));
+const data=JSON.parse(fs.readFileSync('standorte.json','utf8')),allowed=new Set(['id','state','services','openingHours','website','locationUrl','phone','email','partnerType']);
+assert.equal(data.audience,'public');assert.equal(data.selection,'public-and-active');for(const p of data.partners)for(const key of Object.keys(p))assert(allowed.has(key),key);
+const elements=new Map();const element=id=>{if(!elements.has(id))elements.set(id,{checked:true,value:'',options:[],selectedOptions:[],addEventListener(){},textContent:'',innerHTML:''});return elements.get(id)};
+const context={PartnerDirectory:D,document:{getElementById:element},console};vm.createContext(context);vm.runInContext(app.replace(/init\(\);\s*$/,''),context);
+context.demoDetails={partners:[{id:'1',services:['Reifen']}]};context.demoCsv=[['KST','Netzwerk','Gesellschaft','Strasse','PLZ','Ort','Lat./Breitengard','Long./Längengrad'],['1','EFR','Demo','Demo 1','1010','Wien','48.2','16.3'],['2','EFR','Unmatched','Demo 2','1010','Wien','','']];
+assert.equal(vm.runInContext('parse(demoCsv,demoDetails).length',context),1);assert.equal(vm.runInContext('parse(demoCsv,demoDetails)[0].mappable',context),true);context.demoCsv[1][6]='';assert.equal(vm.runInContext('parse(demoCsv,demoDetails)[0].mappable',context),false);
+console.log('Public directory field boundary, filters, escaping, ID join and missing coordinates verified.');
