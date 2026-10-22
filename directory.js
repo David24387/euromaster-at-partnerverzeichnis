@@ -14,6 +14,8 @@ function merge(base,detail){
 function matches(c,services=[],state=''){
  return (!state||c.state===state)&&services.every(s=>c.services.includes(s));
 }
+const isSimplePartner=c=>['EFR','PLP'].includes(String(c.network||c.partnerType||'').toUpperCase());
+const categoryLabel=c=>isSimplePartner(c)?'Einfache Partner':(({FRP:'Franchise',FRPL:'Franchise Light'})[c.partnerType]||c.network);
 function profile(c){
  const address=[c.str,[c.plz,c.ort].filter(Boolean).join(' ')].filter(Boolean).join(', ');
  const row=(label,value)=>value?`<div class="directory-field"><span>${esc(label)}</span><div>${value}</div></div>`:'';
@@ -21,20 +23,20 @@ function profile(c){
  const email=c.email&&/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(c.email)?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:'';
  const link=(href,label)=>`<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
  const route='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(address);
- return `<section class="directory-profile"><div class="location-network">${esc(({FRP:'Franchise',FRPL:'Franchise Light',EFR:'EFR',PLP:'PLP'})[c.partnerType]||c.network)}</div>`+
+ return `<section class="directory-profile"><div class="location-network ${isSimplePartner(c)?'simple-partner':''}">${esc(categoryLabel(c))}</div>`+
  row('Adresse',esc(address))+row('Telefon',phone)+row('E-Mail',email)+
  row('Öffnungszeiten',esc(c.openingHours).replace(/\n/g,'<br>'))+
  row('Dienstleistungen',c.services.map(s=>`<span class="directory-chip">${esc(s)}</span>`).join(' '))+
  `<div class="directory-links">${link(route,'Route planen')}${c.locationUrl?link(c.locationUrl,'Standortseite'):''}${c.website?link(c.website,'Website'):''}</div></section>`;
 }
 function listItem(c){
- return `<button type="button" class="directory-list-item" data-location-id="${esc(c.kst)}"><strong>${esc(c.firma||c.ort)}</strong><span>${esc([c.partnerType||c.network,c.plz,c.ort].filter(Boolean).join(' · '))}</span>${!c.mappable?'<small>Position fehlt oder ist nicht verwendbar</small>':''}</button>`;
+ return `<button type="button" class="directory-list-item" data-location-id="${esc(c.kst)}"><strong>${esc(c.firma||c.ort)}</strong><span>${esc([categoryLabel(c),c.plz,c.ort].filter(Boolean).join(' · '))}</span>${!c.mappable?'<small>Position fehlt oder ist nicht verwendbar</small>':''}</button>`;
 }
 function attach(centers,features){
  const keys=new Set(centers.map(c=>coordKey(c.lat,c.lng,c.network)));
  return features.filter(f=>{const p=f.properties||{};return keys.has(coordKey(p.lat,p.lng,p.network))});
 }
-const api={esc,safeUrl,coordKey,merge,matches,profile,listItem,attach};
+const api={isSimplePartner,categoryLabel,esc,safeUrl,coordKey,merge,matches,profile,listItem,attach};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.PartnerDirectory=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

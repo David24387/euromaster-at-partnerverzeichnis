@@ -2,7 +2,7 @@
 const D=PartnerDirectory,$=id=>document.getElementById(id);
 let map,rows=[],markers=[];
 const services=()=>Array.from($('serviceFilter').selectedOptions,o=>o.value);
-const networkEnabled=n=>({FRANCHISE:$('franchiseToggle').checked,EFR:$('efrToggle').checked,PLP:$('plpToggle').checked})[n]===true;
+const networkEnabled=n=>({FRANCHISE:$('franchiseToggle').checked,EFR:$('simplePartnerToggle').checked,PLP:$('simplePartnerToggle').checked})[n]===true;
 function parse(csv,details){
  const byId=new Map(details.partners.map(p=>[String(p.id),p])),h=csv[0]||[];
  return csv.slice(1).filter(a=>a.some(Boolean)).map(a=>{
@@ -65,14 +65,14 @@ async function init(){
   if(details.schemaVersion!==1||details.audience!=='public'||details.selection!=='public-and-active'||!Array.isArray(details.partners))throw Error('Ungültiger Export');
   rows=parse(Papa.parse(csv,{skipEmptyLines:true}).data,details);
   for(const [id,values] of [['stateFilter',rows.map(c=>c.state)],['serviceFilter',rows.flatMap(c=>c.services)]]){[...new Set(values.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')).forEach(v=>$(id).add(new Option(v,v)))}
-  serviceChoices();rows.filter(c=>c.mappable).forEach(c=>{const m=L.circleMarker([c.lat,c.lng],{radius:isSmallScreen()?8:9,fillColor:{FRANCHISE:'#164194',EFR:'#f97316',PLP:'#16a34a'}[c.network],color:'#fff',weight:2,fillOpacity:.95});if(!isSmallScreen())m.bindTooltip(D.esc(c.firma+' · '+c.ort));m.on('click',()=>show(c));markers.push({m,c})});
+  serviceChoices();rows.filter(c=>c.mappable).forEach(c=>{const m=L.circleMarker([c.lat,c.lng],{radius:isSmallScreen()?8:9,fillColor:{FRANCHISE:'#164194',EFR:'#cbd5e1',PLP:'#cbd5e1'}[c.network],color:D.isSimplePartner(c)?'#94a3b8':'#fff',weight:2,fillOpacity:.95});if(!isSmallScreen())m.bindTooltip(D.esc(c.firma+' · '+c.ort));m.on('click',()=>show(c));markers.push({m,c})});
   filter();$('status').textContent='Euromaster Partner in Österreich';$('directoryNotice').textContent='Öffentlich freigegebene, aktive Partner. Angaben aus HubSpot.';
  }catch(e){$('status').textContent='Standortdaten konnten nicht geladen werden. Bitte erneut versuchen.';$('counter').textContent='Nicht verfügbar'}
 }
 $('search').addEventListener('input',filter);
-for(const id of ['stateFilter','centersToggle','franchiseToggle','efrToggle','plpToggle'])$(id).addEventListener('change',filter);
+for(const id of ['stateFilter','centersToggle','franchiseToggle','simplePartnerToggle'])$(id).addEventListener('change',filter);
 $('serviceChoices').addEventListener('change',e=>{if(!e.target.matches('input[data-service]'))return;const o=Array.from($('serviceFilter').options).find(o=>o.value===e.target.dataset.service);if(o){o.selected=e.target.checked;filter()}});
-$('clearDirectory').addEventListener('click',()=>{$('search').value='';$('stateFilter').value='';for(const o of $('serviceFilter').options)o.selected=false;for(const id of ['centersToggle','franchiseToggle','efrToggle','plpToggle'])$(id).checked=true;serviceChoices();filter()});
+$('clearDirectory').addEventListener('click',()=>{$('search').value='';$('stateFilter').value='';for(const o of $('serviceFilter').options)o.selected=false;for(const id of ['centersToggle','franchiseToggle','simplePartnerToggle'])$(id).checked=true;serviceChoices();filter()});
 $('directoryList').addEventListener('click',e=>{const b=e.target.closest('[data-location-id]');if(b){const c=rows.find(c=>c.kst===b.dataset.locationId);if(c)show(c)}});
 $('mobileFilterToggle').addEventListener('click',()=>setMobileFilters($('mobileFilterToggle').getAttribute('aria-expanded')!=='true'));
 $('filterPanel').addEventListener('keydown',e=>{if(e.key==='Escape'){setMobileFilters(false);$('mobileFilterToggle').focus()}});

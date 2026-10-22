@@ -13,3 +13,16 @@ const context={PartnerDirectory:D,document:{getElementById:element},console};vm.
 context.demoDetails={partners:[{id:'1',services:['Reifen']}]};context.demoCsv=[['KST','Netzwerk','Gesellschaft','Strasse','PLZ','Ort','Lat./Breitengard','Long./Längengrad'],['1','EFR','Demo','Demo 1','1010','Wien','48.2','16.3'],['2','EFR','Unmatched','Demo 2','1010','Wien','','']];
 assert.equal(vm.runInContext('parse(demoCsv,demoDetails).length',context),1);assert.equal(vm.runInContext('parse(demoCsv,demoDetails)[0].mappable',context),true);context.demoCsv[1][6]='';assert.equal(vm.runInContext('parse(demoCsv,demoDetails)[0].mappable',context),false);
 console.log('Public directory field boundary, filters, escaping, ID join and missing coordinates verified.');
+
+for(const network of ['EFR','PLP']){
+ const c=D.merge({...base,network},{id:'1',partnerType:network,services:[]});
+ assert.equal(D.categoryLabel(c),'Einfache Partner');
+ assert(D.profile(c).includes('Einfache Partner'));assert(D.listItem(c).includes('Einfache Partner'));
+}
+assert(!html.includes('id="efrToggle"'));assert(!html.includes('id="plpToggle"'));assert(html.includes('id="simplePartnerToggle"'));
+element('simplePartnerToggle').checked=false;
+assert.equal(vm.runInContext("networkEnabled('EFR')",context),false);
+assert.equal(vm.runInContext("networkEnabled('PLP')",context),false);
+assert.equal(vm.runInContext("networkEnabled('FRANCHISE')",context),true);
+element('simplePartnerToggle').checked=true;
+assert.equal(vm.runInContext("networkEnabled('EFR')&&networkEnabled('PLP')",context),true);
