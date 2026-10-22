@@ -29,7 +29,7 @@ jobs:
       - name: Prepare only public website files
         run: |
           mkdir public
-          cp index.html app.js directory.js daten.csv standorte.json export_status.json public/
+          cp index.html app.js directory.js daten.csv standorte.json export_status.json austria-border.geojson public/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public

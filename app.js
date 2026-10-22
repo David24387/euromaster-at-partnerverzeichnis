@@ -13,8 +13,15 @@ function parse(csv,details){
 }
 function setMobileFilters(open){$('filterPanel').classList.toggle('is-open',open);$('mobileFilterToggle').setAttribute('aria-expanded',String(open));$('mobileFilterToggle').textContent=open?'Schließen':'Filter öffnen'}
 function show(c){
- if(c.mappable){setMobileFilters(false);map.setView([c.lat,c.lng],12);L.popup({maxWidth:390,maxHeight:500}).setLatLng([c.lat,c.lng]).setContent('<div class="popup-title">'+D.esc(c.firma||c.ort)+'</div>'+D.profile(c)).openOn(map)}
- else $('directoryDetail').innerHTML='<h4>'+D.esc(c.firma||c.ort)+'</h4><p>Keine Kartenposition vorhanden.</p>'+D.profile(c);
+ if(c.mappable){
+  setMobileFilters(false);
+  const mobile=window.matchMedia('(max-width:600px)').matches;
+  const width=Math.min(320,window.innerWidth-64);
+  L.popup({className:'location-popup',maxWidth:width,minWidth:Math.min(260,width),
+   autoPanPaddingTopLeft:[16,48],autoPanPaddingBottomRight:mobile?[16,88]:[Math.min(430,window.innerWidth*0.35),24],
+   keepInView:true})
+   .setLatLng([c.lat,c.lng]).setContent('<div class="location-card"><h2>'+D.esc(c.firma||c.ort)+'</h2>'+D.profile(c)+'</div>').openOn(map);
+ }else $('directoryDetail').innerHTML='<div class="location-card"><h2>'+D.esc(c.firma||c.ort)+'</h2><p>Keine Kartenposition vorhanden.</p>'+D.profile(c)+'</div>';
 }
 function filter(){
  const q=$('search').value.trim().toLocaleLowerCase('de-AT');
@@ -26,8 +33,19 @@ function filter(){
  const n=services().length;$('serviceCount').textContent=n?n+' gewählt':'Alle';
 }
 function serviceChoices(){$('serviceChoices').innerHTML=Array.from($('serviceFilter').options,o=>'<label class="service-option"><input type="checkbox" data-service="'+D.esc(o.value)+'" '+(o.selected?'checked':'')+'><span>'+D.esc(o.text)+'</span></label>').join('')}
+async function loadAustriaBorder(){
+ try{
+  const response=await fetch('./austria-border.geojson');if(!response.ok)throw Error('Grenze fehlt');
+  const geo=await response.json();
+  map.createPane('countryBorder');map.getPane('countryBorder').style.zIndex=450;map.getPane('countryBorder').style.pointerEvents='none';
+  const border=L.geoJSON(geo,{pane:'countryBorder',interactive:false,style:{color:'#164194',weight:2.5,opacity:1,fill:false,lineCap:'round',lineJoin:'round'}}).addTo(map);
+  const mobile=window.matchMedia('(max-width:600px)').matches;
+  map.fitBounds(border.getBounds(),{paddingTopLeft:[24,44],paddingBottomRight:mobile?[24,100]:[420,24],maxZoom:8});
+ }catch(e){$('directoryNotice').textContent='Die Landesgrenze konnte nicht geladen werden.'}
+}
 async function init(){
  map=L.map('map').setView([47.6,14.2],7);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors',maxZoom:19}).addTo(map);
+ loadAustriaBorder();
  try{
   // Pin CSV and profiles to the same commit so updates cannot mix snapshots.
   const repo='https://api.github.com/repos/David24387/euromaster-at-partnerverzeichnis';
