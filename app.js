@@ -65,7 +65,7 @@ async function init(){
   if(details.schemaVersion!==1||details.audience!=='public'||details.selection!=='public-and-active'||!Array.isArray(details.partners))throw Error('Ungültiger Export');
   rows=parse(Papa.parse(csv,{skipEmptyLines:true}).data,details);
   for(const [id,values] of [['stateFilter',rows.map(c=>c.state)],['serviceFilter',rows.flatMap(c=>c.services)]]){[...new Set(values.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')).forEach(v=>$(id).add(new Option(v,v)))}
-  serviceChoices();rows.filter(c=>c.mappable).forEach(c=>{const m=L.circleMarker([c.lat,c.lng],{radius:isSmallScreen()?11:9,fillColor:{FRANCHISE:'#164194',EFR:'#f97316',PLP:'#16a34a'}[c.network],color:'#fff',weight:2,fillOpacity:.95});if(!isSmallScreen())m.bindTooltip(D.esc(c.firma+' · '+c.ort));m.on('click',()=>show(c));markers.push({m,c})});
+  serviceChoices();rows.filter(c=>c.mappable).forEach(c=>{const m=L.circleMarker([c.lat,c.lng],{radius:isSmallScreen()?8:9,fillColor:{FRANCHISE:'#164194',EFR:'#f97316',PLP:'#16a34a'}[c.network],color:'#fff',weight:2,fillOpacity:.95});if(!isSmallScreen())m.bindTooltip(D.esc(c.firma+' · '+c.ort));m.on('click',()=>show(c));markers.push({m,c})});
   filter();$('status').textContent='Euromaster Partner in Österreich';$('directoryNotice').textContent='Öffentlich freigegebene, aktive Partner. Angaben aus HubSpot.';
  }catch(e){$('status').textContent='Standortdaten konnten nicht geladen werden. Bitte erneut versuchen.';$('counter').textContent='Nicht verfügbar'}
 }
