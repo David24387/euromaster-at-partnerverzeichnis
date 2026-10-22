@@ -37,15 +37,24 @@ async function loadAustriaBorder(){
  try{
   const response=await fetch('./austria-border.geojson');if(!response.ok)throw Error('Grenze fehlt');
   const geo=await response.json();
-  map.createPane('countryBorder');map.getPane('countryBorder').style.zIndex=450;map.getPane('countryBorder').style.pointerEvents='none';
+  map.createPane('countryBorder');map.getPane('countryBorder').style.zIndex=350;map.getPane('countryBorder').style.pointerEvents='none';
   const border=L.geoJSON(geo,{pane:'countryBorder',interactive:false,style:{color:'#164194',weight:2.5,opacity:1,fill:false,lineCap:'round',lineJoin:'round'}}).addTo(map);
   const mobile=window.matchMedia('(max-width:600px)').matches;
   map.fitBounds(border.getBounds(),{paddingTopLeft:[24,44],paddingBottomRight:mobile?[24,100]:[420,24],maxZoom:8});
  }catch(e){$('directoryNotice').textContent='Die Landesgrenze konnte nicht geladen werden.'}
 }
+async function loadStateBorders(){
+ try{
+  const response=await fetch('./austria-state-borders.geojson');if(!response.ok)throw Error('Bundeslandgrenzen fehlen');
+  const geo=await response.json();
+  map.createPane('stateBorders');map.getPane('stateBorders').style.zIndex=340;map.getPane('stateBorders').style.pointerEvents='none';
+  L.geoJSON(geo,{pane:'stateBorders',interactive:false,style:{color:'#164194',weight:1.2,opacity:.8,fill:false,lineCap:'round',lineJoin:'round'}}).addTo(map);
+ }catch(e){console.warn('Bundeslandgrenzen konnten nicht geladen werden.')}
+}
 async function init(){
  map=L.map('map').setView([47.6,14.2],7);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors',maxZoom:19}).addTo(map);
  loadAustriaBorder();
+ loadStateBorders();
  try{
   // Pin CSV and profiles to the same commit so updates cannot mix snapshots.
   const repo='https://api.github.com/repos/David24387/euromaster-at-partnerverzeichnis';
