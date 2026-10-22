@@ -11,11 +11,12 @@ function parse(csv,details){
   return D.merge({kst:r.KST,network:String(r.Netzwerk||'').toUpperCase(),netz:r.Netzkennung,firma:r.Gesellschaft,str:r.Strasse,plz:r.PLZ,ort:r.Ort,lat,lng,mappable:!!r['Lat./Breitengard']&&!!r['Long./Längengrad']&&Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=46.2&&lat<=49.1&&lng>=9.4&&lng<=17.3},byId.get(r.KST));
  }).filter(c=>byId.has(c.kst)&&['FRANCHISE','EFR','PLP'].includes(c.network));
 }
-function setMobileFilters(open){$('filterPanel').classList.toggle('is-open',open);$('mobileFilterToggle').setAttribute('aria-expanded',String(open));$('mobileFilterToggle').textContent=open?'Schließen':'Filter öffnen'}
+function setMobileFilters(open){if(open)closeMobileDetail();$('filterPanel').classList.toggle('is-open',open);$('mobileFilterToggle').setAttribute('aria-expanded',String(open));$('mobileFilterToggle').textContent=open?'Schließen':'Filter öffnen'}
 function show(c){
+ if(isSmallScreen()){openMobileDetail('<div class="location-card"><h2>'+D.esc(c.firma||c.ort)+'</h2>'+(!c.mappable?'<p>Keine Kartenposition vorhanden.</p>':'')+D.profile(c)+'</div>');return}
  if(c.mappable){
   setMobileFilters(false);
-  const mobile=window.matchMedia('(max-width:600px)').matches;
+  const mobile=window.matchMedia('(max-width:900px)').matches;
   const width=Math.min(320,window.innerWidth-64);
   L.popup({className:'location-popup',maxWidth:width,minWidth:Math.min(260,width),
    autoPanPaddingTopLeft:[16,48],autoPanPaddingBottomRight:mobile?[16,88]:[Math.min(430,window.innerWidth*0.35),24],
@@ -39,7 +40,7 @@ async function loadAustriaBorder(){
   const geo=await response.json();
   map.createPane('countryBorder');map.getPane('countryBorder').style.zIndex=350;map.getPane('countryBorder').style.pointerEvents='none';
   const border=L.geoJSON(geo,{pane:'countryBorder',interactive:false,style:{color:'#164194',weight:3,opacity:1,fill:false,lineCap:'round',lineJoin:'round'}}).addTo(map);
-  const mobile=window.matchMedia('(max-width:600px)').matches;
+  const mobile=window.matchMedia('(max-width:900px)').matches;
   map.fitBounds(border.getBounds(),{paddingTopLeft:[24,44],paddingBottomRight:mobile?[24,100]:[420,24],maxZoom:8});
  }catch(e){$('directoryNotice').textContent='Die Landesgrenze konnte nicht geladen werden.'}
 }
@@ -64,7 +65,7 @@ async function init(){
   if(details.schemaVersion!==1||details.audience!=='public'||details.selection!=='public-and-active'||!Array.isArray(details.partners))throw Error('Ungültiger Export');
   rows=parse(Papa.parse(csv,{skipEmptyLines:true}).data,details);
   for(const [id,values] of [['stateFilter',rows.map(c=>c.state)],['serviceFilter',rows.flatMap(c=>c.services)]]){[...new Set(values.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')).forEach(v=>$(id).add(new Option(v,v)))}
-  serviceChoices();rows.filter(c=>c.mappable).forEach(c=>{const m=L.circleMarker([c.lat,c.lng],{radius:7,fillColor:{FRANCHISE:'#164194',EFR:'#f97316',PLP:'#16a34a'}[c.network],color:'#fff',weight:2,fillOpacity:.95});m.bindTooltip(D.esc(c.firma+' · '+c.ort));m.on('click',()=>show(c));markers.push({m,c})});
+  serviceChoices();rows.filter(c=>c.mappable).forEach(c=>{const m=L.circleMarker([c.lat,c.lng],{radius:isSmallScreen()?11:9,fillColor:{FRANCHISE:'#164194',EFR:'#f97316',PLP:'#16a34a'}[c.network],color:'#fff',weight:2,fillOpacity:.95});if(!isSmallScreen())m.bindTooltip(D.esc(c.firma+' · '+c.ort));m.on('click',()=>show(c));markers.push({m,c})});
   filter();$('status').textContent='Euromaster Partner in Österreich';$('directoryNotice').textContent='Öffentlich freigegebene, aktive Partner. Angaben aus HubSpot.';
  }catch(e){$('status').textContent='Standortdaten konnten nicht geladen werden. Bitte erneut versuchen.';$('counter').textContent='Nicht verfügbar'}
 }
@@ -75,4 +76,15 @@ $('clearDirectory').addEventListener('click',()=>{$('search').value='';$('stateF
 $('directoryList').addEventListener('click',e=>{const b=e.target.closest('[data-location-id]');if(b){const c=rows.find(c=>c.kst===b.dataset.locationId);if(c)show(c)}});
 $('mobileFilterToggle').addEventListener('click',()=>setMobileFilters($('mobileFilterToggle').getAttribute('aria-expanded')!=='true'));
 $('filterPanel').addEventListener('keydown',e=>{if(e.key==='Escape'){setMobileFilters(false);$('mobileFilterToggle').focus()}});
+
+const isSmallScreen=()=>typeof window!=='undefined'&&window.matchMedia('(max-width:900px)').matches;
+function closeMobileDetail(){$('mobileDetail').hidden=true}
+function openMobileDetail(html){setMobileFilters(false);if(map&&map.closePopup)map.closePopup();$('mobileDetailBody').innerHTML=html;$('mobileDetailBody').scrollTop=0;$('mobileDetail').hidden=false;$('closeMobileDetail').focus()}
+$('closeMobileDetail').addEventListener('click',closeMobileDetail);
+$('mobileDetail').addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileDetail()});
+if(typeof window!=='undefined'){
+ let sizeFrame;
+ const resizeMap=()=>{cancelAnimationFrame(sizeFrame);sizeFrame=requestAnimationFrame(()=>{const h=window.visualViewport?.height||window.innerHeight;document.documentElement.style.setProperty('--map-height',h+'px');document.documentElement.style.setProperty('--keyboard-offset',Math.max(0,window.innerHeight-h-(window.visualViewport?.offsetTop||0))+'px');if(map&&map.invalidateSize)map.invalidateSize({pan:false});if(!isSmallScreen())closeMobileDetail()})};
+ window.addEventListener('resize',resizeMap);window.visualViewport?.addEventListener('resize',resizeMap);resizeMap();
+}
 init();
