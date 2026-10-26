@@ -1,17 +1,13 @@
-# Euromaster AT Partnerverzeichnis
+# EUROMASTER_AT-Partnerlandkarte
 
-Öffentliches Verzeichnis: HubSpot Public_Status = Public UND kundenstatus = Aktiv,
-Lifecycle FRP/FRPL/EFR/PLP. Suche, Netzwerk-, Bundesland- und Leistungsfilter,
-Standortliste und Profile mit Adresse, Kontakt, Öffnungszeiten und Leistungen.
-Keine Bedarfsermittlung, Fahrzeitflächen, Marktpotenziale oder internen Firmenfelder.
+Die Karte wird im selben Repository stündlich durch `.github/workflows/sync-hubspot.yml` aus HubSpot aktualisiert und anschließend veröffentlicht. GitHub kann geplante Läufe verzögern.
 
-Die drei Datendateien werden vom privaten Repository hubspot-standort-export-private
-stündlich vollständig ersetzt. Hier keine HubSpot- oder ORS-Schlüssel hinterlegen.
-Ein Entzug von Public oder Aktiv entfernt den Standort im nächsten erfolgreichen Export.
+Voraussetzung: Unter Settings → Secrets and variables → Actions muss das Repository-Secret `HUBSPOT_TOKEN` mit einem HubSpot Private-App-Token hinterlegt sein. Benötigt werden Leserechte für Unternehmen und deren Property-Definitionen. Schlüssel niemals in Dateien oder Chats eintragen.
 
-GitHub Pages: Settings → Pages → Source: GitHub Actions.
-Der Workflow pages.yml testet die Datenfeldgrenze und veröffentlicht nur die sechs Website-Dateien.
-URL: https://david24387.github.io/euromaster-at-partnerverzeichnis/
+Manuell starten: Actions → Sync public HubSpot partners → Run workflow.
 
-Der erste Bestand enthält die 73 aktiven Partner des bisherigen Public-Exports.
-Aktuelle Zahlen nach Aktivierung des zentralen Publishers in export_status.json.
+Es werden ausschließlich aktive FRP/FRPL/EFR/PLP mit Public_Status = Public übernommen. Neue freigegebene Standorte kommen beim nächsten erfolgreichen Lauf hinzu; nicht mehr freigegebene oder inaktive Standorte entfallen. Veröffentlicht werden nur freigegebene Verzeichnisfelder. Interne Firmenfelder und Non-Public-Standorte sind ausgeschlossen.
+
+Der Export aktualisiert daten.csv, standorte.json und export_status.json. Bei Export- oder Prüfungsfehlern bleibt der bisherige veröffentlichte Datenstand erhalten.
+
+Website: https://david24387.github.io/euromaster-at-partnerverzeichnis/
