@@ -1,0 +1,56 @@
+name: Sync public HubSpot partners
+on:
+  schedule:
+    - cron: '37 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/sync_hubspot_public.py', '.github/workflows/sync-hubspot.yml']
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  sync-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Export public and active partners from HubSpot
+        env:
+          HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_TOKEN }}
+        run: python scripts/sync_hubspot_public.py
+      - name: Check public data boundary and directory
+        run: node --test tests/*.test.cjs
+      - name: Save validated snapshot
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add daten.csv standorte.json export_status.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Sync public active AT partners from HubSpot'
+            git pull --rebase origin main
+            git push
+          fi
+      - uses: actions/configure-pages@v5
+      - name: Prepare public website
+        run: |
+          mkdir public
+          cp index.html app.js directory.js daten.csv standorte.json export_status.json austria-border.geojson austria-state-borders.geojson public/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - uses: actions/deploy-pages@v4
+        id: deployment
